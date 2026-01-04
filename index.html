@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitEye - Super Intelligence GitHub Search Engine</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --neon-cyan: #00f2ff;
+            --neon-mMww :-)a: #ff00ff;
+            --neon-green: #39ff14;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(0, 242, 255, 0.2);
+            --card-bg: #0d0d0d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.3s ease; }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.15), transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(255, 0, 255, 0.05), transparent 30%);
+            color: #ffffff;
+            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container { width: 92%; max-width: 1300px; margin: 0 auto; padding-bottom: 50px; }
+
+        /* --- LOGO & NAV --- */
+        nav { padding: 20px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .logo h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; text-shadow: 0 0 15px var(--neon-cyan); }
+        .logo span { color: var(--neon-cyan); }
+
+        /* --- CAT LOGO ANIMATION --- */
+        .hero { text-align: center; padding: 30px 0 10px; }
+        .logo-wrapper {
+            position: relative; width: 100px; height: 100px; margin: 0 auto 15px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .circle-pulse {
+            position: absolute; width: 100%; height: 100%;
+            border: 2px solid var(--neon-cyan); border-radius: 50%;
+            animation: pulse 2s infinite ease-in-out; box-shadow: 0 0 20px var(--neon-cyan);
+        }
+        .octo-tail { transform-origin: 50% 80%; animation: tail-shake 0.5s infinite alternate ease-in-out; }
+        .octo-eye { fill: white; animation: blink 3s infinite; }
+
+        @keyframes tail-shake { from { transform: rotate(-10deg); } to { transform: rotate(15deg); } }
+        @keyframes blink { 0%, 90%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* --- SEARCH CONSOLE --- */
+        .search-area {
+            background: var(--glass); backdrop-filter: blur(20px);
+            padding: 20px; border-radius: 20px; border: 1px solid var(--border);
+            margin: 10px auto 30px; max-width: 950px; box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        .input-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        input, select {
+            background: #111; border: 1px solid var(--border); color: white;
+            padding: 12px 15px; border-radius: 10px; outline: none; flex: 1; min-width: 100%;
+        }
+        
+        .filter-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+        .filter-row input, .filter-row select { padding: 10px 12px; font-size: 0.85rem; min-width: 48%; flex: 1; }
+
+        .search-btn {
+            background: var(--neon-cyan); color: #000; border: none;
+            padding: 14px; border-radius: 10px; font-weight: 900;
+            text-transform: uppercase; cursor: pointer; width: 100%; margin-top: 15px; font-size: 0.9rem;
+        }
+        .search-btn:hover { background: #fff; box-shadow: 0 0 30px var(--neon-cyan); transform: scale(1.01); }
+
+        /* --- GRID & CARDS --- */
+        .results-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); 
+            gap: 20px; 
+        }
+
+        .card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 15px; padding: 20px; display: flex; flex-direction: column;
+            animation: fadeIn 0.5s ease forwards;
+        }
+        .card:hover { border-color: var(--neon-cyan); transform: translateY(-5px); }
+
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .card-header img { width: 55px; height: 55px; border-radius: 10px; }
+        .card-title { font-size: 1.15rem; font-weight: 800; color: #fff; word-break: break-all; }
+        .card-desc { color: #888; font-size: 0.85rem; margin-bottom: 15px; flex-grow: 1; line-height: 1.4; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .stat-box { background: rgba(255,255,255,0.03); padding: 6px; border-radius: 6px; border: 1px solid #222; font-size: 0.75rem; text-align: center; }
+        .stat-box span { display: block; color: var(--neon-cyan); font-weight: 800; font-size: 0.9rem; }
+
+        .card-footer { display: flex; gap: 8px; }
+        .btn { flex: 1; padding: 10px; border-radius: 8px; text-decoration: none; font-size: 0.8rem; font-weight: 800; text-align: center; }
+        .btn-main { background: #fff; color: #000; }
+        .btn-outline { border: 1px solid #333; color: #fff; }
+
+        /* --- MEDIA QUERIES FOR RESPONSIVENESS --- */
+        
+        /* Tablets (600px and up) */
+        @media (min-width: 600px) {
+            .results-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+            input { min-width: 250px; }
+            select { min-width: 150px; flex: 0.4; }
+            .input-group { flex-wrap: nowrap; }
+            .filter-row input, .filter-row select { min-width: 180px; flex: none; }
+        }
+
+        /* Laptops/Desktop (1024px and up) */
+        @media (min-width: 1024px) {
+            .results-grid { grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
+            .logo h1 { font-size: 2.2rem; }
+            .hero { padding: 40px 0 20px; }
+            .logo-wrapper { width: 120px; height: 120px; }
+            .search-area { padding: 30px; margin: 20px auto 40px; }
+        }
+
+        /* --- LOAD MORE --- */
+        .load-more-container { text-align: center; margin-top: 40px; }
+        #loadMoreBtn {
+            display: none; padding: 12px 40px; background: transparent; 
+            border: 2px solid var(--neon-cyan); color: var(--neon-cyan);
+            border-radius: 50px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 0.8rem;
+        }
+
+        /* --- SKELETON & ANIMATIONS --- */
+        .skeleton { height: 300px; background: linear-gradient(90deg, #0a0a0a 25%, #151515 50%, #0a0a0a 75%); background-size: 200% 100%; animation: load 1.5s infinite; border-radius: 15px; }
+        @keyframes load { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        footer { padding: 30px; text-align: center; color: #444; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 40px; }
+        
+        /* Hide scrollbar but allow scrolling */
+        body::-webkit-scrollbar { width: 6px; }
+        body::-webkit-scrollbar-track { background: #000; }
+        body::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; }
+        .neon-greeting {
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 5px 15px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.5);
+    
+    transition: all 0.5s ease;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.1); /* Default Glow */
+}
+footer {
+    margin-top: 60px;
+    padding: 40px 0;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.neon-link {
+    color: var(--neon-cyan);
+    text-decoration: none;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px var(--neon-cyan);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.neon-link:hover {
+    color: var(--neon-magenta);
+    text-shadow: 0 0 20px var(--neon-magenta);
+}
+
+.neon-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 1px;
+    bottom: -2px;
+    left: 0;
+    background-color: var(--neon-magenta);
+    box-shadow: 0 0 10px var(--neon-magenta);
+    transition: width 0.3s ease;
+}
+
+.neon-link:hover::after {
+    width: 100%;
+}
+
+.footer-divider {
+    width: 50px;
+    height: 2px;
+    background: var(--border);
+    margin: 5px 0;
+}
+
+.footer-sub {
+    font-size: 0.75rem;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* মোবাইল ভিউর জন্য অ্যাডজাস্টমেন্ট */
+@media (max-width: 600px) {
+    footer {
+        padding: 30px 15px;
+    }
+    .footer-sub {
+        letter-spacing: 1px;
+        font-size: 0.65rem;
+    }
+}
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <nav>
+        <div class="logo"><h1>Git<span>Eye</span></h1></div>
+     <div id="status" class="neon-greeting">SYSTEM INITIALIZING...</div>
+
+    </nav>
+
+    <div class="hero">
+        <div class="logo-wrapper">
+            <div class="circle-pulse"></div>
+            <svg width="70" height="70" viewBox="0 0 100 100">
+                <path d="M50 10c-22.1 0-40 17.9-40 40 0 17.7 11.5 32.7 27.4 38 2 .4 2.7-.9 2.7-1.9v-6.7c-11.1 2.4-13.5-5.4-13.5-5.4-1.8-4.6-4.4-5.8-4.4-5.8-3.6-2.5.3-2.4.3-2.4 4 .3 6.1 4.1 6.1 4.1 3.6 6.1 9.3 4.4 11.6 3.3.4-2.6 1.4-4.4 2.5-5.4-8.9-1-18.2-4.4-18.2-19.8 0-4.4 1.6-8 4.1-10.8-.4-1-.18-5.1.4-10.7 0 0 3.4-1.1 11.1 4.1 3.2-.9 6.7-1.3 10.1-1.3s6.9.4 10.1 1.3c7.7-5.2 11.1-4.1 11.1-4.1.6 5.6.8 9.7.4 10.7 2.5 2.8 4.1 6.4 4.1 10.8 0 15.4-9.3 18.7-18.3 19.7 1.4 1.2 2.7 3.7 2.7 7.5v11.2c0 1 .7 2.2 2.7 1.8C78.5 82.7 90 67.7 90 50c0-22.1-17.9-40-40-40z" fill="var(--neon-cyan)"/>
+                <circle class="octo-eye" cx="42" cy="48" r="3" />
+                <circle class="octo-eye" cx="58" cy="48" r="3" />
+                <path class="octo-tail" d="M35 75 Q 30 85, 25 78" stroke="var(--neon-cyan)" stroke-width="4" fill="none" />
+            </svg>
+        </div>
+        <p style="letter-spacing: 1.5px; color: #555; font-size: 1rem;">GitHub Super Intelligence Search Engine</p>
+    </div>
+
+    <div class="search-area">
+        <div class="input-group">
+            <input type="text" id="userInput" placeholder="Search devs, repos or code..." onkeypress="if(event.key==='Enter') startSearch(1, false)">
+            <select id="searchType">
+                <option value="repositories">Repositories</option>
+                <option value="users">Developers</option>
+                <option value="code">Source Code</option>
+            </select>
+        </div>
+        <div class="filter-row">
+            <input type="text" id="langFilter" placeholder="Lang (e.g. JS)">
+            <select id="sortBy">
+                <option value="best-match">Best Match</option>
+                <option value="stars">Stars</option>
+                <option value="updated">Updated</option>
+            </select>
+        </div>
+        <button class="search-btn" onclick="startSearch(1, false)">Scan</button>
+    </div>
+
+    <div id="results" class="results-grid"></div>
+
+    <div class="load-more-container">
+        <button id="loadMoreBtn" onclick="loadMore()">Load More Results</button>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-content">
+        <p><a href="./index.html" class="neon-link">GitEye</a> © <a href="https://github.com/HumayunShariarHimu" class="neon-link">Humayun Shariar Himu</a></p>  
+    </div>
+</footer>
+
+
+<script>
+    // ... (Script remains exactly the same as your provided version) ...
+    let currentPage = 1;
+    let currentQuery = "";
+    let currentType = "";
+
+    async function startSearch(page = 1, append = false) {
+        const query = document.getElementById('userInput').value;
+        const type = document.getElementById('searchType').value;
+        const lang = document.getElementById('langFilter').value;
+        const sort = document.getElementById('sortBy').value;
+        const resultsGrid = document.getElementById('results');
+        const loadBtn = document.getElementById('loadMoreBtn');
+        const status = document.getElementById('status');
+
+        if(!query) return;
+        currentPage = page;
+        currentQuery = query;
+        currentType = type;
+
+        if(!append) {
+            resultsGrid.innerHTML = Array(6).fill('<div class="skeleton"></div>').join('');
+            loadBtn.style.display = "none";
+        }
+        
+        status.innerText = "SCANNING...";
+        status.style.color = "var(--neon-cyan)";
+
+        let q = query;
+        if(lang) q += `+language:${lang}`;
+        let url = `https://api.github.com/search/${type}?q=${q}`;
+        if(sort !== 'best-match') url += `&sort=${sort}`;
+        url += `&page=${currentPage}&per_page=12`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if(!append) resultsGrid.innerHTML = "";
+
+            if (!data.items || data.items.length === 0) {
+                if(!append) resultsGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; padding:50px;">NO DATA FOUND.</p>`;
+                status.innerText = "READY";
+                return;
+            }
+
+            data.items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                let html = "";
+                if(type === 'users') {
+                    html = `
+                        <div class="card-header">
+                            <img src="${item.avatar_url}" alt="avatar">
+                            <div>
+                                <div class="card-title">${item.login}</div>
+                                <div style="color:var(--neon-mMww :-)a); font-size:0.75rem;">${item.type}</div>
+                            </div>
+                        </div>
+                        <p class="card-desc">GitHub Developer profile. ID: ${item.id}. Match Score: ${item.score.toFixed(1)}</p>
+                        <div class="card-footer">
+                            <a href="${item.html_url}" target="_blank" class="btn btn-main">PROFILE</a>
+                            <button onclick="copy('${item.html_url}')" class="btn btn-outline">COPY</button>
+                        </div>
+                    `;
+                } else if(type === 'repositories') {
+                    html = `
+                        <div class="card-title" style="color:var(--neon-cyan); margin-bottom:8px;">${item.name}</div>
+                        <p class="card-desc">${item.description || 'No description.'}</p>
+                        <div class="stats-grid">
+                            <div class="stat-box">STARS<span>${item.stargazers_count}</span></div>
+                            <div class="stat-box">FORKS<span>${item.forks_count}</span></div>
+                            <div class="stat-box">LANG<span>${item.language || 'DATA'}</span></div>
+                            <div class="stat-box">ISSUES<span>${item.open_issues_count}</span></div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="${item.html_url}" target="_blank" class="btn btn-main">SOURCE</a>
+                            <button onclick="copy('${item.html_url}')" class="btn btn-outline">CLONE</button>
+                        </div>
+                    `;
+                } else if(type === 'code') {
+                    html = `
+                        <div class="card-title" style="color:var(--neon-green); font-size:1rem; margin-bottom:8px;">${item.name}</div>
+                        <p class="card-desc" style="font-family:monospace; background:#000; padding:8px; border-radius:5px; font-size:0.75rem;">${item.path}</p>
+                        <div class="card-footer">
+                            <a href="${item.html_url}" target="_blank" class="btn btn-main">CODE</a>
+                            <button onclick="copy('${item.html_url}')" class="btn btn-outline">URL</button>
+                        </div>
+                    `;
+                }
+                card.innerHTML = html;
+                resultsGrid.appendChild(card);
+            });
+
+            status.innerText = "SUCCESS";
+            status.style.color = "var(--neon-green)";
+            if(data.items.length === 12) loadBtn.style.display = "inline-block";
+        } catch (err) {
+            status.innerText = "ERROR";
+            resultsGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center;">LIMIT REACHED.</p>`;
+        }
+    }
+
+    function loadMore() { currentPage++; startSearch(currentPage, true); }
+    function copy(text) { 
+        navigator.clipboard.writeText(text); 
+        alert("Copied!"); 
+    }
+    function updateDynamicGreeting() {
+    const statusBox = document.getElementById('status');
+    const now = new Date();
+    const hour = now.getHours();
+    let greeting = "";
+    let neonColor = "";
+
+    if (hour >= 5 && hour < 12) {
+        greeting = "✨ Good Morning, Mww :-)";
+        neonColor = "#39ff14"; // Neon Green
+    } else if (hour >= 12 && hour < 17) {
+        greeting = "☀️ Good Afternoon, Mww :-)";
+        neonColor = "#00f2ff"; // Neon Cyan
+    } else if (hour >= 17 && hour < 21) {
+        greeting = "🌆 Good Evening, Mww :-)";
+        neonColor = "#ff00ff"; // Neon MMww :-)a
+    } else {
+        greeting = "🌙 Good Night, Mww :-)";
+        neonColor = "#bc13fe"; // Neon Purple
+    }
+
+    // স্টাইল এবং টেক্সট আপডেট
+    statusBox.innerText = greeting;
+    statusBox.style.color = neonColor;
+    statusBox.style.borderColor = neonColor;
+    statusBox.style.textShadow = `0 0 10px ${neonColor}`;
+    statusBox.style.boxShadow = `inset 0 0 5px ${neonColor}, 0 0 15px ${neonColor}33`;
+}
+
+// লোড হওয়ার সময় কল হবে
+updateDynamicGreeting();
+
+// প্রতি ১০ মিনিটে একবার সময় চেক করবে যেন রাত ১২টা বা দুপুর ১২টা পার হলে অটো আপডেট হয়
+setInterval(updateDynamicGreeting, 600000);
+
+</script>
+</body>
+</html>
